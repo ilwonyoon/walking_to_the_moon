@@ -1,0 +1,5 @@
+{
+    "client_id": "SK74cPG1YAWDRO82Sn47SU3wJn3CPJU1",
+    "client_secret": "qVwS2TNwuX036b0fViTSl1b9nOqtR97wGY9TyGRl2kE8aC3A1twnS7ILL0nUi46A",
+    "redirect_uri": "http://localhost:3000/auth/token"
+}
