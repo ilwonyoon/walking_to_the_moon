@@ -2,6 +2,8 @@ var https = require('https');
 var qs = require('querystring');
 var Shakes = require('../lib/shakes');
 var nconf = require('nconf');
+//Get User data and store moves info
+var User = require('../app/models/user');
 
 nconf.argv().env().file({
     file: 'settings.json'
@@ -14,40 +16,13 @@ var shakesOpts = {
 
 var moves = new Shakes(shakesOpts);
 var expires = 14 * 24 * 3600000; // 2 weeks
-
-//Moves API authorization
-exports.moves_auth = function(req, res) {
-    var t,
-        hasToken = false;
-
-    if (req.cookies.m_token) {
-        t = req.cookies.m_token;
-        hasToken = true;
-    }
-
-    var moves = new Shakes(shakesOpts);
-    var auth_url = moves.authorize({
-        'scope': 'activity location'
-    });
-    var mobile_auth_url = moves.authorize({
-        'scope': 'activity location',
-        'urlScheme': 'mobile',
-        'redirect_uri': 'http://192.168.1.129:5000/moves/auth/token'
-    });
-
-    res.render('moves_auth', {
-        title: 'Shakes Example',
-        auth_url: auth_url,
-        mobile_auth_url: mobile_auth_url,
-        token: t,
-        has_token: hasToken
-    });
-};
+var sameday = false;
+var index;
 
 exports.token = function(req, res) {
     if (req.query.code) {
         moves.token(req.query.code, function(t) {
-            console.log(t);
+            console.log(req);
             res.clearCookie('m_token');
             res.clearCookie('m_rtoken');
 
@@ -58,6 +33,7 @@ exports.token = function(req, res) {
                 maxAge: expires
             });
 
+
             res.render('moves_token', {
                 'title': 'Token info',
                 'token': JSON.stringify(t)
@@ -67,7 +43,7 @@ exports.token = function(req, res) {
 };
 
 exports.token_info = function(req, res) {
-    console.log(req);
+
     if (!req.cookies.m_token)
         res.render('moves_token', {
             'title': 'Token info'
@@ -121,12 +97,52 @@ exports.moves_profile = function(req, res) {
 };
 
 exports.dailySummary = function(req, res) {
+    console.log("date : " + req.params.date);
     var day = req.params.date ? req.params.date : moment().format('YYYYMMDD');
+
     moves.get('dailySummary', {
         date: day
     }, req.cookies.m_token, function(data) {
+        //console.log(data[0].summary[0]);
 
-        console.log(data[0]);
+        var todayMoves = {
+            date: req.params.date,
+            distance: data[0].summary[0].distance,
+            duration: data[0].summary[0].duration,
+            steps: data[0].summary[0].steps,
+        }
+
+
+        var movesQuery = {
+            "_id": req.user._id
+        }
+        User.findOne(movesQuery, function(err, user) {
+            if (err) console.error(err);
+            else {
+                for (var i = 0; i < user.todayMoves.length; i++) {
+                    if (user.todayMoves[i].date == day) {
+                        sameday = true;
+                        index = i;
+                        break;
+                    }
+                }
+                if (sameday) {
+                    console.log("Update your distance and duration");
+                    user.todayMoves[index].distance = data[0].summary[0].distance;
+                    user.todayMoves[index].duration = data[0].summary[0].duration;
+                    user.todayMoves[index].steps = data[0].summary[0].steps;
+                    user.save();
+                } else {
+                    console.log("Get new data");
+                    sameday = false;
+                    user.todayMoves.push(todayMoves);
+                    user.save();
+                }
+                console.log(user.todayMoves);
+            }
+
+        })
+
         res.render('summary', {
             'title': 'Daily Summary',
             'summary': data
@@ -160,10 +176,11 @@ exports.monthlySummary = function(req, res) {
 
 exports.dailyActivity = function(req, res) {
     var day = req.params.date ? req.params.date : moment().format('YYYYMMDD');
-    console.log(day);
+
     moves.get('dailyActivity', {
         date: day
     }, req.cookies.m_token, function(data) {
+        console.log(data[0].segments[1]);
         res.render('activity', {
             'title': 'Daily Activity',
             'activity': data
@@ -214,7 +231,7 @@ exports.dailyStoryline = function(req, res) {
     moves.get('dailyStoryline', {
         date: day
     }, req.cookies.m_token, function(data) {
-        res.render('storyline', {
+        res.render('activity', {
             'title': 'Daily Storyline',
             'activity': data
         });
@@ -226,7 +243,7 @@ exports.weeklyStoryline = function(req, res) {
     moves.get('weeklyStoryline', {
         week: week
     }, req.cookies.m_token, function(data) {
-        res.render('storyline', {
+        res.render('activity', {
             'title': 'Weekly Storyline',
             'activity': data
         });

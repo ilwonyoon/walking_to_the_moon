@@ -2,6 +2,7 @@
 // load the things we need
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
+var moment = require('moment');
 
 // define the schema for our user model
 var userSchema = mongoose.Schema({
@@ -14,17 +15,27 @@ var userSchema = mongoose.Schema({
         id: String,
         token: String,
         email: String,
-        name: String
+        name: String,
+        createdAt: {
+            type: Date,
+            Default: Date.now()
+        }
     },
-    //Save moves data to model
-    moves: {
-        client_id: String,
-        user_id: String,
-        scope: String,
+    //Save today's moves data to model
+    todayMoves: [{
+        date: Number,
+        distance: Number,
+        duration: Number,
+        steps: Number
+    }],
+    //Update total Moves data
+    totalMoves: {
         distance: Number,
         step: Number,
-        tDistance: Number,
-        tSteps: Number
+        lastUpdated: {
+            type: Date,
+            Default: Date.now
+        }
     }
 });
 
