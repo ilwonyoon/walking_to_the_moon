@@ -23,21 +23,18 @@ var userSchema = new mongoose.Schema({
     },
     initiate: Boolean,
     firstDate: Number,
-    test: Number,
-
+    firstDateString: String,
+    lastUpdatedDate: Number,
+    test: [mongoose.Schema.Mixed],
     //Save today's moves data to model
     todayMoves: {
-        time: Number,
         date: Number,
-        walkDist: Number,
-        walksteps: Number,
-        runDist: Number,
-        runSteps: Number
+        summary: [mongoose.Schema.Mixed]
     },
     //Update total Moves data
     totalMoves: {
         distance: Number,
-        steps: Number,
+        step: Number,
         lastUpdated: Number
     }
 });

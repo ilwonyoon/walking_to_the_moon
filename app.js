@@ -52,13 +52,7 @@ app.get('/login', routes.login);
 app.post('/login', routes.login_post);
 app.get('/signup', routes.signup);
 app.post('/signup', routes.signup_post);
-// app.get('/profile', isLoggedIn, function(req, res) {
-//     res.render('profile.ejs', {
-//         user: req.user // get the user out of session and pass to template
-//     });
-// });
-
-app.get('/profile', isLoggedIn, routes.allprofile);
+app.get('/profile', isLoggedIn, routes.profile);
 app.get('/auth/facebook', passport.authenticate('facebook', {
     scope: 'email'
 }));
@@ -76,27 +70,26 @@ app.get('/logout', function(req, res) {
 app.get('/moves/auth/token', isLoggedIn, moves.token);
 app.get('/moves/auth/token_info', moves.token_info);
 app.get('/moves/auth/refresh_token', moves.refresh_token);
-app.get('/moves/profile', moves.moves_profile);
 app.get('/moves/summary/daily/:date?', moves.dailySummary);
 app.get('/moves/summary/weekly/:date?', moves.weeklySummary);
 app.get('/moves/summary/monthly/:date?', moves.monthlySummary);
 app.get('/moves/activity/daily/:date?', moves.dailyActivity);
 app.get('/moves/activity/weekly/:date?', moves.weeklyActivity);
-app.get('/moves/places/daily/:date?', moves.dailyPlaces);
-app.get('/moves/places/weekly/:date?', moves.weeklyPlaces);
-app.get('/moves/storyline/daily/:date?', moves.dailyStoryline);
-app.get('/moves/storyline/weekly/:date?', moves.weeklyStoryline);
+
+app.get('/pastdayUpdate', routes.pastdayUpdate);
+app.get('/samedayUpdate', routes.samedayUpdate);
+app.get('/moves/initData', moves.initData);
+app.get('/reset', moves.resetmodel);
+app.get('/moves/update', moves.update);
+app.get('/moves/error', moves.errormessage);
 // route middleware to make sure
 function isLoggedIn(req, res, next) {
-
     // if user is authenticated in the session, carry on
     if (req.isAuthenticated())
         return next();
     // if they aren't redirect them to the home page
     res.redirect('/');
 }
-
-
 
 // launch ======================================================================
 app.listen(port);

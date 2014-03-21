@@ -1,5 +1,5 @@
 {
-    "client_id": "J3YZu4S_Oanyo98334533SR65YbKOCHK",
-    "client_secret": "AIexvq3ic6UR352vkqxl94B1Z924gd0bWVKpSQ9TlD7_Tq2Qz4JMutUmGZ4zxhNU",
+    "client_id": "AH64y3qHD57wAH6nboAVIoJ62DbIK9tt",
+    "client_secret": "KS9GWTo40CsUHHq44H7f8foGbyiASqmQYYf4yeJ3E65h8l2y5v1QP7Q7T376u0Cy",
     "redirect_uri": "http://localhost:5000/moves/auth/token"
 }

@@ -8,6 +8,9 @@
 	<style>
 		body 		{ padding-top:80px; word-wrap:break-word; }
 	</style>
+	<script type="text/javascript">
+		
+	</script>
 </head>
 <body>
 <div class="container">
@@ -20,7 +23,7 @@
 	<div class="row">
 
 		<!-- LOCAL INFORMATION -->
-		<div class="col-sm-6">
+<!-- 		<div class="col-sm-6">
 			<div class="well">
 				<h3><span class="fa fa-user"></span> Local</h3>
 
@@ -31,10 +34,10 @@
 					</p>
 
 			</div>
-		</div>
+		</div> -->
 
 		<!-- FACEBOOK INFORMATION -->
-		<div class="col-sm-6">
+<!-- 		<div class="col-sm-6">
 			<div class="well">
 				<h3 class="text-primary"><span class="fa fa-facebook"></span> Facebook</h3>
 
@@ -46,7 +49,8 @@
 					</p>
 
 			</div>
-		</div>
+		</div> -->
+		<h3>Welcome to walking to the moon! <%=user.facebook.name %></h3>
 
 		<!-- MOVES INFORMATION -->
 		<div class="col-sm-6">
@@ -55,8 +59,10 @@
 
 					<p>
 						<a href="<%= auth_url %>">Authorize for Moves</a><br>
-						<a href="<%= mobile_auth_url %>">Mobile Authorize for Moves</a>
-						</a></h3>
+						<a href="<%= mobile_auth_url %>">Mobile Authorize for Moves</a><br>
+						<p>Your travelled distance : <%= distance%> m</p>
+						<p>Your total steps : <%= steps%> steps</p>
+						</h3>
 					</p>
 
 			</div>
