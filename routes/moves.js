@@ -135,7 +135,7 @@ exports.resetmodel = function(req, res) {
     User.findOne(filter, function(err, user) {
         if (err) console.error(err);
         else {
-            user.todayMoves.date = 20140301;
+            user.todayMoves.date = 20140320;
             // Reset totalMoves dist/steps to current data
             user.totalMoves.distance = 0;
             user.totalMoves.steps = 0;
@@ -283,6 +283,15 @@ exports.rangefrom = function(req, res) {
         User.findOne(filter, function(err, user) {
             if (err) console.error(err);
             else {
+                if (data[toIndex - 1].summary !== null) {
+                    user.todayMoves.walksteps = data[toIndex - 1].summary[wlk].steps;
+                    user.todayMoves.walkDist = data[toIndex - 1].summary[wlk].distance;
+                    if (data[toIndex - 1].summary.length >= 3) {
+                        user.todayMoves.runSteps = data[toIndex - 1].summary[wlk].steps;
+                        user.todayMoves.runDist = data[toIndex - 1].summary[wlk].distance;
+                    }
+                }
+
                 tDist = user.totalMoves.distance + addDist;
                 tSteps = user.totalMoves.steps + addSteps;
                 user.totalMoves.distance = tDist;
