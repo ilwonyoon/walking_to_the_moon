@@ -76,8 +76,11 @@ app.get('/moves/summary/monthly/:date?', moves.monthlySummary);
 app.get('/moves/activity/daily/:date?', moves.dailyActivity);
 app.get('/moves/activity/weekly/:date?', moves.weeklyActivity);
 
-app.get('/pastdayUpdate', routes.pastdayUpdate);
+//GET / user / summary / daily ? from = < from > & to = < to > [ & updatedSince = < updatedSince > ]
+
+app.get('/moves/summary/rangefrom=:from?&to=:to?', moves.rangefrom);
 app.get('/samedayUpdate', routes.samedayUpdate);
+app.get('/leftoverUpdate', routes.leftoverUpdate);
 app.get('/moves/initData', moves.initData);
 app.get('/reset', moves.resetmodel);
 app.get('/moves/update', moves.update);

@@ -82,6 +82,7 @@ exports.signup_post = function(req, res) {
 
 }
 exports.profile = function(req, res) {
+    console.log("profile page");
     var t,
         hasToken = false;
     if (req.cookies.m_token) {
@@ -100,13 +101,12 @@ exports.profile = function(req, res) {
 
     if (today.date - req.user.todayMoves.date > 0) {
         //Get the last day left over data
-        //if date is not up to date, go to otherday page to update
-        console.log("You haven't logged in a while!Let's collect past data");
-        res.redirect('/samedayUpdate');
+        console.log("You haven't logged in a while! Let's collect past data");
+        res.redirect('/leftoverUpdate');
 
     } else if (today.date == req.user.todayMoves.date) {
         //Get the samedayUpdate 
-        console.log("same day-profile page.");
+        console.log("same day update page.");
         var filter = {
             "_id": req.user._id
         }
@@ -123,7 +123,7 @@ exports.profile = function(req, res) {
                     var tSteps = 0;
                     var wlkIndex = null;
                     var runIndex = null;
-                    console.log("1.start update");
+                    console.log("1.start update :" + user.todayMoves.date);
 
                     // Does data summary exist? if yes, get data.
                     if (data[0].summary !== null) {
@@ -153,7 +153,7 @@ exports.profile = function(req, res) {
                         }
 
                         tDist = user.totalMoves.distance + addDist;
-                        console.log("Total Dist : " + tSteps + " = current Total : " + user.totalMoves.steps + "  +  add : " + addSteps);
+                        console.log("Total Dist : " + tDist + " = current Total : " + user.totalMoves.distance + "  +  add : " + addDist);
                         tSteps = user.totalMoves.steps + addSteps;
                         user.totalMoves.distance = tDist;
                         user.totalMoves.steps = tSteps;
@@ -162,12 +162,7 @@ exports.profile = function(req, res) {
                     }
                 });
             }
-            if (today.date !== user.todayMoves.date) {
-                res.redirect('/pastdayUpdate');
-            }
-            //console.log(user);
         }); //User.findOne line
-
     }
 
     res.render('profile.ejs', {
@@ -182,8 +177,86 @@ exports.profile = function(req, res) {
 
 }
 
+exports.leftoverUpdate = function(req, res) {
+    //Get the samedayUpdate 
+    console.log("start leftoverupdate");
+    var filter = {
+        "_id": req.user._id
+    }
+
+
+    User.findOne(filter, function(err, user) {
+        if (err) console.error(err);
+        else {
+
+            //Let's get first data update
+            moves.get('dailySummary', {
+                date: user.todayMoves.date
+            }, req.cookies.m_token, function(data) {
+                console.log("Start Updating_leftover : " + user.todayMoves.date);
+                var tDist = 0;
+                var addDist = 0;
+                var addSteps = 0;
+                var tSteps = 0;
+                var wlkIndex = null;
+                var runIndex = null;
+                var from = user.todayMoves.date + 1;
+                var to = today.date - 1;
+                console.log("1.start update_leftover");
+
+                // Does data summary exist? if yes, get data.
+                if (data[0].summary !== null) {
+                    for (var i = 0; i < data[0].summary.length; i++) {
+                        if (data[0].summary[i].activity == 'wlk') {
+                            console.log("2.get wlk index_leftover");
+                            wlkIndex = i;
+                        } else if (data[0].summary[i].activity == 'run') {
+                            console.log("2.get run index_leftover");
+                            wlkIndex = i;
+                        }
+                    }
+
+                    if (wlkIndex !== null) {
+                        console.log("3.get wlk data_leftover");
+                        addDist += (data[0].summary[wlkIndex].distance - user.todayMoves.walkDist);
+                        addSteps += (data[0].summary[wlkIndex].steps - user.todayMoves.walksteps);
+                        user.todayMoves.walkDist = data[0].summary[wlkIndex].distance;
+                        user.todayMoves.walksteps = data[0].summary[wlkIndex].steps;
+                    }
+
+                    if (runIndex !== null) {
+                        console.log("3.get run data_leftover");
+                        addDist += (data[0].summary[i].distance - user.todayMoves.walkDist);
+                        addSteps += (data[0].summary[i].steps - user.todayMoves.walksteps);
+                        user.todayMoves.runDist = data[0].summary[i].distance;
+                        user.todayMoves.runSteps = data[0].summary[i].steps;
+                    }
+                    var d = user.todayMoves.date + 1;
+                    user.todayMoves.date = d;
+                    tDist = user.totalMoves.distance + addDist;
+                    //console.log("Total Dist : " + tSteps + " = current Total : " + user.totalMoves.steps + "  +  add : " + addSteps);
+                    tSteps = user.totalMoves.steps + addSteps;
+                    user.totalMoves.distance = tDist;
+                    user.totalMoves.steps = tSteps;
+                    user.save();
+                    console.log("4.update completed_leftover");
+
+                }
+                if (today.date !== user.todayMoves.date) {
+                    console.log("complete update last date data. Now update from last day+1 to today");
+                    res.redirect('/moves/summary/rangefrom=' + from + '&to=' + to + '');
+                } else if (today.date == user.todayMoves.date) {
+                    console.log('data is up to date. Go to profile');
+                    res.redirect('/profile');
+                }
+            }); //moves.get()
+        }
+    }); //User.findOne line
+}
+
 exports.samedayUpdate = function(req, res) {
-    console.log("sameday Update Page.");
+    //Get the samedayUpdate 
+    console.log("same day update page.");
     var filter = {
         "_id": req.user._id
     }
@@ -198,83 +271,51 @@ exports.samedayUpdate = function(req, res) {
                 var addDist = 0;
                 var addSteps = 0;
                 var tSteps = 0;
-                console.log("update");
+                var wlkIndex = null;
+                var runIndex = null;
+                console.log("1.start update");
+
+                // Does data summary exist? if yes, get data.
                 if (data[0].summary !== null) {
                     for (var i = 0; i < data[0].summary.length; i++) {
                         if (data[0].summary[i].activity == 'wlk') {
-                            addDist += (data[0].summary[i].distance - user.todayMoves.walkDist);
-                            addSteps += (data[0].summary[i].steps - user.todayMoves.walksteps);
-                            user.todayMoves.walkDist = data[0].summary[i].distance;
-                            user.todayMoves.walksteps = data[0].summary[i].steps;
-
+                            console.log("2.get wlk index");
+                            wlkIndex = i;
                         } else if (data[0].summary[i].activity == 'run') {
-                            addDist += (data[0].summary[i].distance - user.todayMoves.walkDist);
-                            addSteps += (data[0].summary[i].steps - user.todayMoves.walksteps);
-                            user.todayMoves.runDist = data[0].summary[i].distance;
-                            user.todayMoves.runSteps = data[0].summary[i].steps;
+                            console.log("2.get run index");
+                            wlkIndex = i;
                         }
-                        tDist = user.totalMoves.distance + addDist;
-                        tSteps = user.totalMoves.steps + addSteps;
-                        user.totalMoves.distance = tDist;
-                        user.totalMoves.steps = tSteps;
-                        user.save();
-                        console.log("update completed");
                     }
-                }
-            });
-        }
-        if (today.date !== user.todayMoves.date) {
-            res.redirect('/pastdayUpdate');
-        }
-        //console.log(user);
-    });
-}
+                    if (wlkIndex !== null) {
+                        console.log("3.get wlk data");
+                        addDist += (data[0].summary[wlkIndex].distance - user.todayMoves.walkDist);
+                        addSteps += (data[0].summary[wlkIndex].steps - user.todayMoves.walksteps);
+                        user.todayMoves.walkDist = data[0].summary[wlkIndex].distance;
+                        user.todayMoves.walksteps = data[0].summary[wlkIndex].steps;
+                    }
 
-exports.pastdayUpdate = function(req, res) {
-    console.log("PastdayUpdate page");
-    var filter = {
-        "_id": req.user._id
-    }
-    var pastDate;
-    User.findOne(filter, function(err, user) {
-        if (err) console.error(err);
-        else {
-            pastDate = user.todayMoves.date + 1;
-            moves.get('dailySummary', {
-                date: pastDate
-            }, req.cookies.m_token, function(data) {
-                var tDist = 0;
-                var addDist = 0;
-                var addSteps = 0;
-                var tSteps = 0;
-                console.log("get past date data");
-                for (var i = 0; i < data[0].summary.length; i++) {
-                    if (data[0].summary[i].activity == 'wlk') {
-                        addDist += (data[0].summary[i].distance);
-                        addSteps += (data[0].summary[i].steps);
-                        user.todayMoves.walkDist = data[0].summary[i].distance;
-                        user.todayMoves.walksteps = data[0].summary[i].steps;
-
-                    } else if (data[0].summary[i].activity == 'run') {
-                        addDist += (data[0].summary[i].distance);
-                        addSteps += (data[0].summary[i].steps);
+                    if (runIndex !== null) {
+                        console.log("3.get run data");
+                        addDist += (data[0].summary[i].distance - user.todayMoves.walkDist);
+                        addSteps += (data[0].summary[i].steps - user.todayMoves.walksteps);
                         user.todayMoves.runDist = data[0].summary[i].distance;
                         user.todayMoves.runSteps = data[0].summary[i].steps;
                     }
+
                     tDist = user.totalMoves.distance + addDist;
+                    console.log("Total Dist : " + tSteps + " = current Total : " + user.totalMoves.steps + "  +  add : " + addSteps);
                     tSteps = user.totalMoves.steps + addSteps;
                     user.totalMoves.distance = tDist;
                     user.totalMoves.steps = tSteps;
                     user.save();
+                    console.log("4.update completed");
                 }
             });
-            user.todayMoves.date = pastDate;
-            user.save();
-            res.redirect('/profile');
         }
-    });
-
+        res.redirect('/profile');
+    }); //User.findOne line
 }
+
 //moves_auth page should be in the same page with profile
 //Moves API authorization
 exports.moves_auth = function(req, res) {

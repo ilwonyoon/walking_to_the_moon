@@ -135,10 +135,14 @@ exports.resetmodel = function(req, res) {
     User.findOne(filter, function(err, user) {
         if (err) console.error(err);
         else {
-            user.todayMoves.date = 20140321;
+            user.todayMoves.date = 20140301;
             // Reset totalMoves dist/steps to current data
-            user.totalMoves.distance = user.todayMoves.walkDist;
-            user.totalMoves.steps = user.todayMoves.walksteps;
+            user.totalMoves.distance = 0;
+            user.totalMoves.steps = 0;
+            user.todayMoves.walksteps = 0;
+            user.todayMoves.walkDist = 0;
+            user.todayMoves.runSteps = 0;
+            user.todayMoves.runDist = 0;
             user.save();
         }
         res.send(JSON.stringify(user));
@@ -237,6 +241,63 @@ exports.monthlySummary = function(req, res) {
         // });
     });
 };
+
+//Different month implementation should be updated. Not now. :(
+exports.rangefrom = function(req, res) {
+    console.log("start rangefrom data update");
+    var wlk = 0; //index of walking in data[0].summary[0]
+    var run = 2; //index of running in data[0].summary[2]
+    var from = req.params.from;
+    var to = req.params.to;
+    console.log("from:" + from + ", to : " + to);
+    var monthQuery = from.slice(0, 6);
+    from = from.slice(6, 8);
+    to = to.slice(6, 8);
+    var fromIndex = Number(from) - 1; // index of 20140301 is 0. Date - 1 = index of array
+    var toIndex = Number(to); //don't subtract -1 since it's length of the range
+    var addDist = 0;
+    var addSteps = 0;
+    var tDist;
+    var tSteps;
+
+    moves.get('monthlySummary', {
+        month: monthQuery
+    }, req.cookies.m_token, function(data) {
+        for (var i = fromIndex; i < toIndex; i++) {
+            if (data[0].summary !== null) {
+                console.log("data: " + data[i].date);
+                addDist += data[i].summary[wlk].distance;
+                addSteps += data[i].summary[wlk].steps;
+                if (data[i].summary.length >= 3) {
+                    addDist += data[i].summary[run].distance;
+                    addSteps += data[i].summary[wlk].steps;
+                }
+            } else {
+                console.log("data is missing");
+            }
+
+        }
+        var filter = {
+            "_id": req.user._id
+        }
+        User.findOne(filter, function(err, user) {
+            if (err) console.error(err);
+            else {
+                tDist = user.totalMoves.distance + addDist;
+                tSteps = user.totalMoves.steps + addSteps;
+                user.totalMoves.distance = tDist;
+                user.totalMoves.steps = tSteps;
+                user.todayMoves.date = today.date;
+                user.save();
+                console.log("update all past data,but today data");
+            }
+            //res.send(JSON.stringify(data));
+        });
+        res.redirect('/profile');
+
+    });
+    //res.send("Hell NO");
+}
 
 //get today's Moves data
 exports.dailyActivity = function(req, res) {
