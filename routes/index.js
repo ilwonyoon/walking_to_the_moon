@@ -153,12 +153,16 @@ exports.profile = function(req, res) {
                         }
 
                         tDist = user.totalMoves.distance + addDist;
-                        console.log("Total Dist : " + tDist + " = current Total : " + user.totalMoves.distance + "  +  add : " + addDist);
+                        if (addDist == 0 || addSteps == 0) {
+                            console.log("(:)Data is up to date.");
+                        } else {
+                            console.log("Total Dist : " + tDist + " = current Total : " + user.totalMoves.distance + "  +  add : " + addDist);
+                        }
                         tSteps = user.totalMoves.steps + addSteps;
                         user.totalMoves.distance = tDist;
                         user.totalMoves.steps = tSteps;
                         user.save();
-                        console.log("4.update completed");
+                        console.log("4.leftover_update completed");
                     }
                 });
             }
@@ -171,8 +175,10 @@ exports.profile = function(req, res) {
         token: t,
         has_token: hasToken,
         user: req.user, // get the user out of session and pass to template
-        distance: req.user.totalMoves.distance,
-        steps: req.user.totalMoves.steps
+        distance: req.user.totalMoves.distance * 0.001,
+        steps: req.user.totalMoves.steps,
+        lastUpdatedDate: today.date,
+        lastUpdatedTime: now.time
     });
 
 }
@@ -207,16 +213,16 @@ exports.leftoverUpdate = function(req, res) {
                 // Does data summary exist? if yes, get data.
                 if (data[0].summary !== null) {
 
-                    console.log("3.get wlk data_leftover");
+                    console.log("2.get wlk data_leftover");
                     addDist += Math.abs(data[0].summary[wlk].distance - user.todayMoves.walkDist);
                     console.log("cDist_wlk : " + data[0].summary[wlk].distance + " pDist_wlk :" +
                         user.todayMoves.walkDist + "addDist_wlk:" + addDist);
                     addSteps += Math.abs(data[0].summary[wlk].steps - user.todayMoves.walksteps);
                     user.todayMoves.walkDist = data[0].summary[wlk].distance;
                     user.todayMoves.walksteps = data[0].summary[wlk].steps;
-
-                    if (data[0].summary.length >= 2) {
-                        console.log("3.get run data_leftover");
+                    console.log("data[0].summary[run]: " + data[0].summary[run]);
+                    if (data[0].summary[run] !== undefined) {
+                        console.log("2.get run data_leftover");
                         addDist += Math.abs(data[0].summary[run].distance - user.todayMoves.runDist);
                         console.log("cDist_run : " + data[0].summary[run].distance + " pDist_run :" + user.todayMoves.runDist + "addDist_run:" + addDist);
                         addSteps += Math.abs(data[0].summary[run].steps - user.todayMoves.runSteps);

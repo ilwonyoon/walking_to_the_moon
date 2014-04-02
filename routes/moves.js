@@ -57,12 +57,15 @@ exports.initData = function(req, res) {
     var filter = {
         "_id": req.user._id
     }
+    var wlk = 0;
+    var run = 2;
+
     User.findOne(filter, function(err, user) {
         if (err) console.error(err);
         else {
-            user.initiate = true;
             if (user.initiate === true) {
-                console.log("init all data set");
+                user.initiate = false;
+                console.log("init all data set from the first date of the game");
                 user.todayMoves.date = user.firstDate;
                 user.todayMoves.time = today.date;
                 //Let's get first data update
@@ -71,26 +74,29 @@ exports.initData = function(req, res) {
                 }, req.cookies.m_token, function(data) {
                     var tDist = 0;
                     var tSteps = 0;
-                    for (var i = 0; i < data[0].summary.length; i++) {
-                        if (data[0].summary[i].activity == 'wlk') {
-                            user.todayMoves.walkDist = data[0].summary[i].distance;
-                            user.todayMoves.walksteps = data[0].summary[i].steps;
-                            tDist += data[0].summary[i].distance;
-                            tSteps += data[0].summary[i].steps;
-
-                        } else if (data[0].summary[i].activity == 'run') {
-                            user.todayMoves.runDist = data[0].summary[i].distance;
-                            user.todayMoves.runSteps = data[0].summary[i].steps;
-                            tSteps += data[0].summary[i].steps;
-                            tDist += data[0].summary[i].distance;
+                    if (data[0].summary !== null) {
+                        console.log("The date is :" + today.date);
+                        console.log("Get wlk data");
+                        user.todayMoves.walkDist = data[0].summary[wlk].distance;
+                        user.todayMoves.walksteps = data[0].summary[wlk].steps;
+                        if (data[0].summary[run] !== undefined) {
+                            console.log("if there is run data, get run data");
+                            user.todayMoves.runDist = data[0].summary[run].distance;
+                            user.todayMoves.runSteps = data[0].summary[run].steps;
                         }
+                        console.log("INIT :  todayMoves == totalMoves");
+                        console.log("total Dist :" + tDist + ", total Steps :" + tSteps);
+                        tDist = data[0].summary[wlk].distance + data[0].summary[run].distance;
+                        tSteps = data[0].summary[wlk].steps + data[0].summary[run].steps
                         user.totalMoves.distance = tDist;
                         user.totalMoves.steps = tSteps;
                         user.save();
+                        console.log("init data completed");
                     }
                 });
             }
         }
+        console.log("re-direct to /profile");
         res.redirect('/profile');
         //res.send(JSON.stringify(user));
     });
@@ -135,7 +141,7 @@ exports.resetmodel = function(req, res) {
     User.findOne(filter, function(err, user) {
         if (err) console.error(err);
         else {
-            user.todayMoves.date = 20140320;
+            user.todayMoves.date = 20140301;
             // Reset totalMoves dist/steps to current data
             user.totalMoves.distance = 0;
             user.totalMoves.steps = 0;
@@ -268,7 +274,7 @@ exports.rangefrom = function(req, res) {
                 console.log("data: " + data[i].date);
                 addDist += data[i].summary[wlk].distance;
                 addSteps += data[i].summary[wlk].steps;
-                if (data[i].summary.length >= 3) {
+                if (data[i].summary[run] !== undefined) {
                     addDist += data[i].summary[run].distance;
                     addSteps += data[i].summary[wlk].steps;
                 }
