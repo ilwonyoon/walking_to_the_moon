@@ -1,6 +1,14 @@
 var getDate = function() {
     today = new Date();
-    var dd = today.getDate().toString();
+    //var dd = today.getDate().toString();
+    var dd = today.getDate();
+    if (dd < 10) {
+        dd.toString();
+        var add_zero = '0';
+        dd = add_zero.concat(dd);
+    } else {
+        dd.toString();
+    }
 
     //getMonth() only returns 0-12, but we need 01,02...12 for data format
     var mm = today.getMonth() + 1; //January is 0!

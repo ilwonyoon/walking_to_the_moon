@@ -83,12 +83,6 @@ exports.signup_post = function(req, res) {
 }
 exports.profile = function(req, res) {
     console.log("profile page");
-    var t,
-        hasToken = false;
-    if (req.cookies.m_token) {
-        t = req.cookies.m_token;
-        hasToken = true;
-    }
     var moves = new Shakes(shakesOpts);
     var auth_url = moves.authorize({
         'scope': 'activity location'
@@ -98,76 +92,81 @@ exports.profile = function(req, res) {
         'urlScheme': 'mobile',
         'redirect_uri': 'http://192.168.1.129:5000/moves/auth/token'
     });
+    var t,
+        hasToken = false;
+    //If user doesn't have a token for Moves, redirect to Moves Auth page
+    if (!req.cookies.m_token) {
+        res.redirect(auth_url);
+        //if user has a token for Moves, update the data.    
+    } else {
+        t = req.cookies.m_token;
+        hasToken = true;
+        if (today.date - req.user.todayMoves.date > 0) {
+            //Get the last day left over data
+            console.log("You haven't logged in a while! Let's collect past data");
+            res.redirect('/leftoverUpdate');
 
-    if (today.date - req.user.todayMoves.date > 0) {
-        //Get the last day left over data
-        console.log("You haven't logged in a while! Let's collect past data");
-        res.redirect('/leftoverUpdate');
-
-    } else if (today.date == req.user.todayMoves.date) {
-        //Get the samedayUpdate 
-        console.log("same day update page.");
-        var filter = {
-            "_id": req.user._id
-        }
-        User.findOne(filter, function(err, user) {
-            if (err) console.error(err);
-            else {
-                //Let's get first data update
-                moves.get('dailySummary', {
-                    date: user.todayMoves.date
-                }, req.cookies.m_token, function(data) {
-                    var tDist = 0;
-                    var addDist = 0;
-                    var addSteps = 0;
-                    var tSteps = 0;
-                    var wlkIndex = null;
-                    var runIndex = null;
-                    console.log("1.start update :" + user.todayMoves.date);
-
-                    // Does data summary exist? if yes, get data.
-                    if (data[0].summary !== null) {
-                        for (var i = 0; i < data[0].summary.length; i++) {
-                            if (data[0].summary[i].activity == 'wlk') {
-                                console.log("2.get wlk index");
-                                wlkIndex = i;
-                            } else if (data[0].summary[i].activity == 'run') {
-                                console.log("2.get run index");
-                                wlkIndex = i;
-                            }
-                        }
-                        if (wlkIndex !== null) {
-                            console.log("3.get wlk data");
-                            addDist += (data[0].summary[wlkIndex].distance - user.todayMoves.walkDist);
-                            addSteps += (data[0].summary[wlkIndex].steps - user.todayMoves.walksteps);
-                            user.todayMoves.walkDist = data[0].summary[wlkIndex].distance;
-                            user.todayMoves.walksteps = data[0].summary[wlkIndex].steps;
-                        }
-
-                        if (runIndex !== null) {
-                            console.log("3.get run data");
-                            addDist += (data[0].summary[i].distance - user.todayMoves.walkDist);
-                            addSteps += (data[0].summary[i].steps - user.todayMoves.walksteps);
-                            user.todayMoves.runDist = data[0].summary[i].distance;
-                            user.todayMoves.runSteps = data[0].summary[i].steps;
-                        }
-
-                        tDist = user.totalMoves.distance + addDist;
-                        if (addDist == 0 || addSteps == 0) {
-                            console.log("(:)Data is up to date.");
-                        } else {
-                            console.log("Total Dist : " + tDist + " = current Total : " + user.totalMoves.distance + "  +  add : " + addDist);
-                        }
-                        tSteps = user.totalMoves.steps + addSteps;
-                        user.totalMoves.distance = tDist;
-                        user.totalMoves.steps = tSteps;
-                        user.save();
-                        console.log("4.leftover_update completed");
-                    }
-                });
+        } else if (today.date == req.user.todayMoves.date) {
+            //Get the samedayUpdate 
+            console.log("same day update page.");
+            var filter = {
+                "_id": req.user._id
             }
-        }); //User.findOne line
+            User.findOne(filter, function(err, user) {
+                if (err) console.error(err);
+                else {
+                    //Let's get first data update
+                    moves.get('dailySummary', {
+                        date: user.todayMoves.date
+                    }, req.cookies.m_token, function(data) {
+                        var tDist = 0;
+                        var addDist = 0;
+                        var addSteps = 0;
+                        var tSteps = 0;
+                        var wlkIndex = 0;
+                        var runIndex = 2;
+                        console.log("1.start update :" + user.todayMoves.date);
+
+                        // Does data summary exist? if yes, get data.
+                        if (data[0].summary !== null) {
+
+                            if (wlkIndex !== null) {
+                                console.log("3.get wlk data");
+                                addDist += (data[0].summary[wlkIndex].distance - user.todayMoves.walkDist);
+                                addSteps += (data[0].summary[wlkIndex].steps - user.todayMoves.walksteps);
+                                console.log("addSteps : " + addSteps);
+                                user.todayMoves.walkDist = data[0].summary[wlkIndex].distance;
+                                user.todayMoves.walksteps = data[0].summary[wlkIndex].steps;
+                            }
+
+                            if (runIndex !== null) {
+                                console.log("3.get run data");
+                                addDist += (data[0].summary[runIndex].distance - user.todayMoves.runDist);
+                                addSteps += (data[0].summary[runIndex].steps - user.todayMoves.runSteps);
+                                console.log("addSteps : " + addSteps);
+                                user.todayMoves.runDist = data[0].summary[runIndex].distance;
+                                user.todayMoves.runSteps = data[0].summary[runIndex].steps;
+                            }
+
+                            tDist = user.totalMoves.distance + addDist;
+                            if (addDist == 0 || addSteps == 0) {
+                                console.log("(:)Data is up to date.");
+                            } else {
+                                console.log("Total Dist : " + tDist + " = current Total : " + user.totalMoves.distance + "  +  add : " + addDist);
+                            }
+                            tSteps = user.totalMoves.steps + addSteps;
+                            user.totalMoves.distance = tDist;
+                            user.totalMoves.steps = tSteps;
+                            user.save();
+                            console.log("4.leftover_update completed");
+                        }
+                    });
+                }
+            }); //User.findOne line
+        }
     }
+
+
 
     res.render('profile.ejs', {
         auth_url: auth_url,
@@ -220,7 +219,7 @@ exports.leftoverUpdate = function(req, res) {
                     addSteps += Math.abs(data[0].summary[wlk].steps - user.todayMoves.walksteps);
                     user.todayMoves.walkDist = data[0].summary[wlk].distance;
                     user.todayMoves.walksteps = data[0].summary[wlk].steps;
-                    console.log("data[0].summary[run]: " + data[0].summary[run]);
+
                     if (data[0].summary[run] !== undefined) {
                         console.log("2.get run data_leftover");
                         addDist += Math.abs(data[0].summary[run].distance - user.todayMoves.runDist);

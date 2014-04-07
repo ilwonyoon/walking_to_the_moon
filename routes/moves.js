@@ -67,7 +67,6 @@ exports.initData = function(req, res) {
                 user.initiate = false;
                 console.log("init all data set from the first date of the game");
                 user.todayMoves.date = user.firstDate;
-                user.todayMoves.time = today.date;
                 //Let's get first data update
                 moves.get('dailySummary', {
                     date: today.date
@@ -88,6 +87,7 @@ exports.initData = function(req, res) {
                         console.log("total Dist :" + tDist + ", total Steps :" + tSteps);
                         tDist = data[0].summary[wlk].distance + data[0].summary[run].distance;
                         tSteps = data[0].summary[wlk].steps + data[0].summary[run].steps
+                        user.firstDate = today.date;
                         user.totalMoves.distance = tDist;
                         user.totalMoves.steps = tSteps;
                         user.save();
@@ -210,43 +210,7 @@ exports.moves_profile = function(req, res) {
     });
 };
 
-exports.dailySummary = function(req, res) {
-    var day = req.params.date ? req.params.date : moment().format('YYYYMMDD');
-    moves.get('dailySummary', {
-        date: day
-    }, req.cookies.m_token, function(data) {
-        res.render('summary', {
-            'title': 'Daily Summary',
-            'summary': data
-        });
-    });
-};
 
-exports.weeklySummary = function(req, res) {
-    var week = req.params.date ? req.params.date : moment().format('YYYY-[W]ww');
-    moves.get('weeklySummary', {
-        week: week
-    }, req.cookies.m_token, function(data) {
-        res.render('summary', {
-            'title': 'Weekly Summary',
-            'summary': data
-        });
-    });
-};
-
-exports.monthlySummary = function(req, res) {
-    var month = req.params.date ? req.params.date : moment().format('YYYYMM');
-    moves.get('monthlySummary', {
-        month: month
-    }, req.cookies.m_token, function(data) {
-
-        res.send(JSON.stringify(data));
-        // res.render('summary', {
-        //     'title': 'Monthly Summary',
-        //     'summary': data
-        // });
-    });
-};
 
 //Different month implementation should be updated. Not now. :(
 exports.rangefrom = function(req, res) {
@@ -257,88 +221,136 @@ exports.rangefrom = function(req, res) {
     var to = req.params.to;
     console.log("from:" + from + ", to : " + to);
     var monthQuery = from.slice(0, 6);
-    from = from.slice(6, 8);
-    to = to.slice(6, 8);
-    var fromIndex = Number(from) - 1; // index of 20140301 is 0. Date - 1 = index of array
-    var toIndex = Number(to); //don't subtract -1 since it's length of the range
+
+    var fromIndex = Number(from.slice(6, 8)) - 1; // index of 20140301 is 0. Date - 1 = index of array
+    var toIndex = Number(to.slice(6, 8)); //don't subtract -1 since it's length of the range
     var addDist = 0;
     var addSteps = 0;
     var tDist;
     var tSteps;
+    //Get how many days in each Month
+    var howManyDaysInMonth = {
+        "01": 31,
+        "02": 28,
+        "03": 31,
+        "04": 30,
+        "05": 31,
+        "06": 30,
+        "07": 31,
+        "08": 31,
+        "09": 30,
+        "10": 31,
+        "11": 30,
+        "12": 31
+    }
 
-    moves.get('monthlySummary', {
-        month: monthQuery
-    }, req.cookies.m_token, function(data) {
-        for (var i = fromIndex; i < toIndex; i++) {
-            if (data[0].summary !== null) {
-                console.log("data: " + data[i].date);
-                addDist += data[i].summary[wlk].distance;
-                addSteps += data[i].summary[wlk].steps;
-                if (data[i].summary[run] !== undefined) {
-                    addDist += data[i].summary[run].distance;
+    //check if the range in the same month
+    var fromMonth = from.substring(4, 6);
+    var toMonth = to.substring(4, 6);
+
+    if (fromMonth !== toMonth) {
+        console.log("####################################");
+        console.log("Get data from past months");
+        console.log("####################################");
+        var year = "2014";
+        var date = "01";
+        var month = toMonth.toString();
+        var updateDate = year.concat(month.concat(date));
+
+        moves.get('monthlySummary', {
+            month: monthQuery
+        }, req.cookies.m_token, function(data) {
+            for (var i = fromIndex; i < howManyDaysInMonth[fromMonth] - 1; i++) {
+                if (data[0].summary !== null) {
+
+                    console.log("data: " + data[i].date);
+                    addDist += data[i].summary[wlk].distance;
                     addSteps += data[i].summary[wlk].steps;
-                }
-            } else {
-                console.log("data is missing");
-            }
-
-        }
-        var filter = {
-            "_id": req.user._id
-        }
-        User.findOne(filter, function(err, user) {
-            if (err) console.error(err);
-            else {
-                if (data[toIndex - 1].summary !== null) {
-                    user.todayMoves.walksteps = data[toIndex - 1].summary[wlk].steps;
-                    user.todayMoves.walkDist = data[toIndex - 1].summary[wlk].distance;
-                    if (data[toIndex - 1].summary.length >= 3) {
-                        user.todayMoves.runSteps = data[toIndex - 1].summary[wlk].steps;
-                        user.todayMoves.runDist = data[toIndex - 1].summary[wlk].distance;
+                    if (data[i].summary[run] !== undefined) {
+                        addDist += data[i].summary[run].distance;
+                        addSteps += data[i].summary[wlk].steps;
                     }
+                } else {
+                    console.log("data is missing");
+                }
+            }
+            var filter = {
+                "_id": req.user._id
+            }
+            User.findOne(filter, function(err, user) {
+                if (err) console.error(err);
+                else {
+                    tDist = user.totalMoves.distance + addDist;
+                    tSteps = user.totalMoves.steps + addSteps;
+                    user.totalMoves.distance = tDist;
+                    user.totalMoves.steps = tSteps;
+                    user.todayMoves.date = updateDate;
+                    user.save();
+                    console.log("Update date to first date of this month : " + updateDate);
+                    console.log("Redirect");
+                    res.redirect('/moves/summary/rangefrom=' + updateDate + '&to=' + to + '');
+                }
+            });
+        });
+
+
+    } else {
+        console.log("####################################");
+        console.log("Same Month");
+        console.log("####################################");
+        moves.get('monthlySummary', {
+            month: monthQuery
+        }, req.cookies.m_token, function(data) {
+            for (var i = fromIndex; i < toIndex; i++) {
+                if (data[0].summary !== null) {
+
+                    console.log("data: " + data[i].date);
+                    addDist += data[i].summary[wlk].distance;
+                    addSteps += data[i].summary[wlk].steps;
+                    if (data[i].summary[run] !== undefined) {
+                        addDist += data[i].summary[run].distance;
+                        addSteps += data[i].summary[wlk].steps;
+                    }
+                } else {
+                    console.log("data is missing");
                 }
 
-                tDist = user.totalMoves.distance + addDist;
-                tSteps = user.totalMoves.steps + addSteps;
-                user.totalMoves.distance = tDist;
-                user.totalMoves.steps = tSteps;
-                user.todayMoves.date = today.date;
-                user.save();
-                console.log("update all past data,but today data");
             }
-            //res.send(JSON.stringify(data));
-        });
-        res.redirect('/profile');
+            var filter = {
+                "_id": req.user._id
+            }
+            User.findOne(filter, function(err, user) {
+                if (err) console.error(err);
+                else {
+                    if (data[toIndex - 1].summary !== null) {
+                        user.todayMoves.walksteps = data[toIndex - 1].summary[wlk].steps;
+                        user.todayMoves.walkDist = data[toIndex - 1].summary[wlk].distance;
+                        if (data[toIndex - 1].summary.length >= 3) {
+                            user.todayMoves.runSteps = data[toIndex - 1].summary[run].steps;
+                            user.todayMoves.runDist = data[toIndex - 1].summary[run].distance;
+                        }
+                    }
 
-    });
-    //res.send("Hell NO");
+                    tDist = user.totalMoves.distance + addDist;
+                    tSteps = user.totalMoves.steps + addSteps;
+                    user.totalMoves.distance = tDist;
+                    user.totalMoves.steps = tSteps;
+                    user.todayMoves.date = today.date;
+                    user.save();
+                    console.log("update all past data,but today data");
+                    res.send(JSON.stringify(user));
+                }
+
+            });
+            // res.redirect('/profile');
+
+        });
+
+    }
+
+
+
 }
-
-//get today's Moves data
-exports.dailyActivity = function(req, res) {
-    var day = req.params.date ? req.params.date : moment().format('YYYYMMDD');
-
-    moves.get('dailyActivity', {
-        date: day
-    }, req.cookies.m_token, function(data) {
-        res.render('activity', {
-            'title': 'Daily Activity',
-            'activity': data
-        });
-    });
-};
-
-exports.weeklyActivity = function(req, res) {
-    var week = req.params.date ? req.params.date : moment().format('YYYY-[W]ww');
-    moves.get('weeklyActivity', {
-        week: week
-    }, req.cookies.m_token, function(data) {
-        res.render('activity', {
-            'title': 'Weekly Activity',
-            'activity': data
-        });
-    });
-};
 
 
 

@@ -70,11 +70,8 @@ app.get('/logout', function(req, res) {
 app.get('/moves/auth/token', isLoggedIn, moves.token);
 app.get('/moves/auth/token_info', moves.token_info);
 app.get('/moves/auth/refresh_token', moves.refresh_token);
-app.get('/moves/summary/daily/:date?', moves.dailySummary);
-app.get('/moves/summary/weekly/:date?', moves.weeklySummary);
-app.get('/moves/summary/monthly/:date?', moves.monthlySummary);
-app.get('/moves/activity/daily/:date?', moves.dailyActivity);
-app.get('/moves/activity/weekly/:date?', moves.weeklyActivity);
+
+
 
 //GET / user / summary / daily ? from = < from > & to = < to > [ & updatedSince = < updatedSince > ]
 
