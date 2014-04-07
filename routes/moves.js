@@ -18,7 +18,7 @@ var shakesOpts = {
 };
 
 var moves = new Shakes(shakesOpts);
-var expires = 14 * 24 * 3600000; // 2 weeks
+var expires = 365 * 24 * 3600000; // 2 weeks
 var sameday = false;
 var index;
 
@@ -43,7 +43,7 @@ exports.token = function(req, res) {
                 if (err) console.error(err);
                 else {
                     user.firstDate = today.date;
-                    user.initiate = true;
+                    user.initiate = false;
                     user.save();
                 }
             });
@@ -54,6 +54,9 @@ exports.token = function(req, res) {
 };
 
 exports.initData = function(req, res) {
+    console.log("########################");
+    console.log("INIT DATA");
+    console.log("########################");
     var filter = {
         "_id": req.user._id
     }
@@ -63,9 +66,10 @@ exports.initData = function(req, res) {
     User.findOne(filter, function(err, user) {
         if (err) console.error(err);
         else {
-            if (user.initiate === true) {
-                user.initiate = false;
-                console.log("init all data set from the first date of the game");
+            if (user.initiate === false) {
+                user.initiate = true;
+                user.moveAuth = false;
+                console.log("init all data for game");
                 user.todayMoves.date = user.firstDate;
                 //Let's get first data update
                 moves.get('dailySummary', {
@@ -82,11 +86,17 @@ exports.initData = function(req, res) {
                             console.log("if there is run data, get run data");
                             user.todayMoves.runDist = data[0].summary[run].distance;
                             user.todayMoves.runSteps = data[0].summary[run].steps;
+                            tDist = data[0].summary[wlk].distance + data[0].summary[run].distance;
+                            tSteps = data[0].summary[wlk].steps + data[0].summary[run].steps
+                        } else {
+                            tDist = data[0].summary[wlk].distance;
+                            tSteps = data[0].summary[wlk].steps;
                         }
                         console.log("INIT :  todayMoves == totalMoves");
                         console.log("total Dist :" + tDist + ", total Steps :" + tSteps);
                         tDist = data[0].summary[wlk].distance + data[0].summary[run].distance;
                         tSteps = data[0].summary[wlk].steps + data[0].summary[run].steps
+
                         user.firstDate = today.date;
                         user.totalMoves.distance = tDist;
                         user.totalMoves.steps = tSteps;
@@ -103,34 +113,6 @@ exports.initData = function(req, res) {
 }
 
 
-
-//check the status of user and update all of data upto now
-exports.update = function(req, res) {
-    //Call user model object first
-    var filter = {
-        "_id": req.user._id
-    }
-    User.findOne(filter, function(err, user) {
-        if (err) console.error(err);
-        else {
-            //init all Moves data set
-            if (user.initiate == true) {
-                //Get date from first date of moves to current date
-                moves.get('dailySummary', {
-                    date: user.firstDate
-                }, req.cookies.m_token, function(data) {
-                    // /console.log(data[0].summary);
-                    console.log(user.todayMoves);
-                    user.todayMoves[0].date = user.firstDate;
-                    user.initiate = false;
-                    user.save();
-                    console.log(user.toayMoves[0]);
-                });
-            }
-        }
-    });
-    res.send("go to <a href='/moves/summary/daily/user.firstDate+'>daily summary </a>");
-};
 
 exports.resetmodel = function(req, res) {
     console.log("reset data model date");
@@ -190,22 +172,6 @@ exports.refresh_token = function(req, res) {
         res.render('moves_token', {
             'title': 'Token info',
             'token': JSON.stringify(t)
-        });
-    });
-};
-
-exports.moves_profile = function(req, res) {
-    moves.get('userProfile', null, req.cookies.m_token, function(data) {
-        var firstDate = data.profile.firstDate.toString();
-        var year = firstDate.substring(0, 4);
-        var month = firstDate.substring(4, 6);
-        var day = firstDate.substring(6, 8);
-        console.log(data);
-        res.render('moves_profile', {
-            'title': 'Your Profile',
-            'profile': data,
-            'convertedDate': new Date(year, month, day).toLocaleDateString(),
-            'firstDate': firstDate
         });
     });
 };

@@ -23,7 +23,6 @@ var userSchema = new mongoose.Schema({
     },
     initiate: Boolean,
     firstDate: Number,
-    test: Number,
 
     //Save today's moves data to model
     todayMoves: {

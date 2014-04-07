@@ -54,12 +54,14 @@ exports.index = function(req, res) {
 
 exports.login = function(req, res) {
     // render the page and pass in any flash data if it exists
+    console.log("LOG IN PAGE");
     res.render('login.ejs', {
         message: req.flash('loginMessage')
     });
 }
 
 exports.login_post = function(req, res) {
+    console.log("LOG IN POST PAGE");
     passport.authenticate('local-login', {
         successRedirect: '/profile', // redirect to the secure profile section
         failureRedirect: '/login', // redirect back to the signup page if there is an error
@@ -68,12 +70,15 @@ exports.login_post = function(req, res) {
 
 }
 exports.signup = function(req, res) {
+    console.log("SIGN UP PAGE");
     // render the page and pass in any flash data if it exists
     res.render('signup.ejs', {
         message: req.flash('signupMessage')
     });
 }
 exports.signup_post = function(req, res) {
+    console.log("SIGN UP POST PAGE");
+
     passport.authenticate('local-signup', {
         successRedirect: '/profile', // redirect to the secure profile section
         failureRedirect: '/signup', // redirect back to the signup page if there is an error
@@ -95,12 +100,14 @@ exports.profile = function(req, res) {
     var t,
         hasToken = false;
     //If user doesn't have a token for Moves, redirect to Moves Auth page
-    if (!req.cookies.m_token) {
+    if (!req.cookies.m_token || req.cookies.m_token === 'undefined') {
         res.redirect(auth_url);
         //if user has a token for Moves, update the data.    
     } else {
         t = req.cookies.m_token;
         hasToken = true;
+        console.log(req.user.todayMoves.date);
+        console.log();
         if (today.date - req.user.todayMoves.date > 0) {
             //Get the last day left over data
             console.log("You haven't logged in a while! Let's collect past data");
@@ -130,16 +137,14 @@ exports.profile = function(req, res) {
                         // Does data summary exist? if yes, get data.
                         if (data[0].summary !== null) {
 
-                            if (wlkIndex !== null) {
-                                console.log("3.get wlk data");
-                                addDist += (data[0].summary[wlkIndex].distance - user.todayMoves.walkDist);
-                                addSteps += (data[0].summary[wlkIndex].steps - user.todayMoves.walksteps);
-                                console.log("addSteps : " + addSteps);
-                                user.todayMoves.walkDist = data[0].summary[wlkIndex].distance;
-                                user.todayMoves.walksteps = data[0].summary[wlkIndex].steps;
-                            }
+                            console.log("3.get wlk data");
+                            addDist += (data[0].summary[wlkIndex].distance - user.todayMoves.walkDist);
+                            addSteps += (data[0].summary[wlkIndex].steps - user.todayMoves.walksteps);
+                            console.log("addSteps : " + addSteps);
+                            user.todayMoves.walkDist = data[0].summary[wlkIndex].distance;
+                            user.todayMoves.walksteps = data[0].summary[wlkIndex].steps;
 
-                            if (runIndex !== null) {
+                            if (data[0].summary[runIndex] !== undefined && data[0].summary[runIndex] !== null) {
                                 console.log("3.get run data");
                                 addDist += (data[0].summary[runIndex].distance - user.todayMoves.runDist);
                                 addSteps += (data[0].summary[runIndex].steps - user.todayMoves.runSteps);
@@ -254,68 +259,6 @@ exports.leftoverUpdate = function(req, res) {
         //res.send(JSON.stringify(user));
     }); //User.findOne line
 
-}
-
-exports.samedayUpdate = function(req, res) {
-    //Get the samedayUpdate 
-    console.log("same day update page.");
-    var filter = {
-        "_id": req.user._id
-    }
-    User.findOne(filter, function(err, user) {
-        if (err) console.error(err);
-        else {
-            //Let's get first data update
-            moves.get('dailySummary', {
-                date: user.todayMoves.date
-            }, req.cookies.m_token, function(data) {
-                var tDist = 0;
-                var addDist = 0;
-                var addSteps = 0;
-                var tSteps = 0;
-                var wlkIndex = null;
-                var runIndex = null;
-                console.log("1.start update");
-
-                // Does data summary exist? if yes, get data.
-                if (data[0].summary !== null) {
-                    for (var i = 0; i < data[0].summary.length; i++) {
-                        if (data[0].summary[i].activity == 'wlk') {
-                            console.log("2.get wlk index");
-                            wlkIndex = i;
-                        } else if (data[0].summary[i].activity == 'run') {
-                            console.log("2.get run index");
-                            wlkIndex = i;
-                        }
-                    }
-                    if (wlkIndex !== null) {
-                        console.log("3.get wlk data");
-                        addDist += (data[0].summary[wlkIndex].distance - user.todayMoves.walkDist);
-                        addSteps += (data[0].summary[wlkIndex].steps - user.todayMoves.walksteps);
-                        user.todayMoves.walkDist = data[0].summary[wlkIndex].distance;
-                        user.todayMoves.walksteps = data[0].summary[wlkIndex].steps;
-                    }
-
-                    if (runIndex !== null) {
-                        console.log("3.get run data");
-                        addDist += (data[0].summary[i].distance - user.todayMoves.walkDist);
-                        addSteps += (data[0].summary[i].steps - user.todayMoves.walksteps);
-                        user.todayMoves.runDist = data[0].summary[i].distance;
-                        user.todayMoves.runSteps = data[0].summary[i].steps;
-                    }
-
-                    tDist = user.totalMoves.distance + addDist;
-                    console.log("Total Dist : " + tSteps + " = current Total : " + user.totalMoves.steps + "  +  add : " + addSteps);
-                    tSteps = user.totalMoves.steps + addSteps;
-                    user.totalMoves.distance = tDist;
-                    user.totalMoves.steps = tSteps;
-                    user.save();
-                    console.log("4.update completed");
-                }
-            });
-        }
-        res.redirect('/profile');
-    }); //User.findOne line
 }
 
 //moves_auth page should be in the same page with profile
