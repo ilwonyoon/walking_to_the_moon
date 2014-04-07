@@ -6,7 +6,7 @@ module.exports = {
     'facebookAuth': {
         'clientID': '281745585317108', // your App ID
         'clientSecret': 'd9d3374d6bbb8960cc323c373348b8b7', // your App Secret
-        'callbackURL': 'http://localhost:5000/auth/facebook/callback'
+        'callbackURL': 'http://walkingtothemoon.herokuapp.com/auth/facebook/callback'
     }
 };
 
