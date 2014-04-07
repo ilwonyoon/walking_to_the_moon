@@ -44,18 +44,15 @@ app.configure(function() {
 
 // routes ======================================================================
 var routes = require('./routes/index');
-var user = require('./routes/users');
+var moves = require('./routes/moves');
+
 
 app.get('/', routes.index);
 app.get('/login', routes.login);
 app.post('/login', routes.login_post);
 app.get('/signup', routes.signup);
 app.post('/signup', routes.signup_post);
-app.get('/profile', isLoggedIn, function(req, res) {
-    res.render('profile.ejs', {
-        user: req.user // get the user out of session and pass to template
-    });
-});
+app.get('/profile', isLoggedIn, routes.profile);
 app.get('/auth/facebook', passport.authenticate('facebook', {
     scope: 'email'
 }));
@@ -68,21 +65,29 @@ app.get('/logout', function(req, res) {
     req.logout();
     res.redirect('/');
 });
-app.get('/profile/moves/auth', isLoggedIn, routes.moves_auth);
-app.get('/profile/moves/moves_profile', user.moves_profile);
-app.get('/profile/moves/summary/daily/:date?', user.dailySummary);
+//Deal with all moves file authentication and data communication
+//app.get('/moves/auth', isLoggedIn, routes.moves_auth);
+app.get('/moves/auth/token', isLoggedIn, moves.token);
+app.get('/moves/auth/token_info', moves.token_info);
+app.get('/moves/auth/refresh_token', moves.refresh_token);
+
+//GET / user / summary / daily ? from = < from > & to = < to > [ & updatedSince = < updatedSince > ]
+
+app.get('/moves/summary/rangefrom=:from?&to=:to?', moves.rangefrom);
+app.get('/samedayUpdate', routes.samedayUpdate);
+app.get('/leftoverUpdate', routes.leftoverUpdate);
+app.get('/moves/initData', moves.initData);
+app.get('/reset', moves.resetmodel);
+app.get('/moves/update', moves.update);
+app.get('/moves/error', moves.errormessage);
 // route middleware to make sure
 function isLoggedIn(req, res, next) {
-
     // if user is authenticated in the session, carry on
     if (req.isAuthenticated())
         return next();
-
     // if they aren't redirect them to the home page
     res.redirect('/');
 }
-
-
 
 // launch ======================================================================
 app.listen(port);
