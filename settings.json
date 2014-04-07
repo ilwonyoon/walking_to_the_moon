@@ -1,5 +1,5 @@
 {
-    "client_id": "AH64y3qHD57wAH6nboAVIoJ62DbIK9tt",
-    "client_secret": "KS9GWTo40CsUHHq44H7f8foGbyiASqmQYYf4yeJ3E65h8l2y5v1QP7Q7T376u0Cy",
-    "redirect_uri": "http://localhost:5000/moves/auth/token"
+    "client_id": "r6aev79M3tWQtbaFR9847XqgQTB07Cj3",
+    "client_secret": "F0SXSIh355U62Uqw2WiVw_oCZ327C_QkJDAQCOhPvnb1iUGpjpN208PW4NaYnhM4",
+    "redirect_uri": "http://walkingtothemoon.herokuapp.com/moves/auth/token"
 }
