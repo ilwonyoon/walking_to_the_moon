@@ -9,6 +9,7 @@ var mongoose = require('mongoose');
 var mongoStore = require('connect-mongo')(express);
 var passport = require('passport');
 var flash = require('connect-flash');
+var path = require('path');
 
 var configDB = require('./config/database.js');
 
@@ -23,6 +24,7 @@ app.configure(function() {
     app.use(express.logger('dev')); // log every request to the console
     app.use(express.cookieParser(process.env.COOKIEHASH)); // read cookies (needed for auth)
     app.use(express.bodyParser()); // get information from html forms
+    app.use(express.static(path.join(__dirname, 'public')));
 
     app.set('view engine', 'ejs'); // set up ejs for templating
 

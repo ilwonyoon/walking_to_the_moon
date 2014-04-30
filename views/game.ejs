@@ -4,71 +4,48 @@
 <head>
 	<title>Walking to the Moon</title>
 	<meta charset="utf-8" />
-	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
-	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+
 	<script src="http://code.createjs.com/easeljs-0.7.1.min.js"></script>
 	<style>
-		body 		{ padding-top:80px; word-wrap:break-word; }
-		#easel {
-					background: #AAA;
-					display: block;
-					margin: 0 0 0 0;
-				}
+		*{
+			padding:0px;
+			border:0px;
+			margin:0px;
+			/*background-color: #000;*/
+		}
+
 	</style>
 	<script type="text/javascript" src="/js/script.js"></script>
+	<script type="text/javascript" src="/js/hero.js"></script>
 	<script type="text/javascript">
-		var steps = <%= steps %>;
-		console.log(steps);
-		var canvas;
-		function init() {
-			canvas = document.getElementById("easel"),
-			SIZE = 30;
-				
-			var shape = new createjs.Shape();
-			shape.graphics.beginFill(createjs.Graphics.getRGB(162, 216, 255));
-			shape.graphics.drawRect(0, 0, steps*5, SIZE);
-			shape.x = 50;
-			shape.y = 50;
-			shape.regX = SIZE/2;
-			shape.regY = SIZE/2;
-
-			var sentence = new createjs.Text("steps", "bold 15px Times", "purple");
-	
-			sentence.x = 50;
-			sentence.y = 50;
-			sentence.regX = 10;
-			sentence.regY = 10;
-			sentence.lineWidth = 150;
-
-			
-			var stage = new createjs.Stage(canvas);
-			stage.addChild(shape);
-			stage.addChild(sentence);
-			shape.addEventListener("click", handleClick);
-			function handleClick(e){
-				console.log("clicked");
-				steps -=5;
-				console.log("steps: " +  steps);
-				stage.update();
+		
+		(function(scope){
+			function MovesData(){
+				this.initialize();
 			}
-			stage.update();
-		}
+			var m = MovesData.prototype;
 
-		function test(){
-			canvas.addEventListener('click',function(e){
-				steps -= 10;
-				console.log(steps);
-			},false)
-		}
-	
+			m.initialize = function(){
+				this.steps = <%= steps %>
+				this.username ="Charles";
+			}
+			m.walking = function(){
+				this.steps -=1;
+			}
+			m.getNewData = function(){
+				console.log("get new data from moves");
+			}
+			scope.MovesData  = MovesData;
+		})(window);
+		
+	</script>
+	<script type="text/javascript">
+		var moves = new MovesData();
 	</script>
 </head>
-<body onload="init();">
+<body>
 						
 		<p>Here is the first game page</p>
-		<canvas id="easel" width="500" height="800">
-	</canvas>
-
-
+		
 </body>
 </html>
