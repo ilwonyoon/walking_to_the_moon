@@ -9,7 +9,6 @@ var mongoose = require('mongoose');
 var mongoStore = require('connect-mongo')(express);
 var passport = require('passport');
 var flash = require('connect-flash');
-var path = require('path');
 
 var configDB = require('./config/database.js');
 
@@ -24,7 +23,6 @@ app.configure(function() {
     app.use(express.logger('dev')); // log every request to the console
     app.use(express.cookieParser(process.env.COOKIEHASH)); // read cookies (needed for auth)
     app.use(express.bodyParser()); // get information from html forms
-    app.use(express.static(path.join(__dirname, 'public')));
 
     app.set('view engine', 'ejs'); // set up ejs for templating
 
@@ -47,7 +45,6 @@ app.configure(function() {
 // routes ======================================================================
 var routes = require('./routes/index');
 var moves = require('./routes/moves');
-var game = require('./routes/game');
 
 
 app.get('/', routes.index);
@@ -73,13 +70,16 @@ app.get('/logout', function(req, res) {
 app.get('/moves/auth/token', isLoggedIn, moves.token);
 app.get('/moves/auth/token_info', moves.token_info);
 app.get('/moves/auth/refresh_token', moves.refresh_token);
+
+//GET / user / summary / daily ? from = < from > & to = < to > [ & updatedSince = < updatedSince > ]
+
 app.get('/moves/summary/rangefrom=:from?&to=:to?', moves.rangefrom);
+app.get('/samedayUpdate', routes.samedayUpdate);
 app.get('/leftoverUpdate', routes.leftoverUpdate);
 app.get('/moves/initData', moves.initData);
 app.get('/reset', moves.resetmodel);
+app.get('/moves/update', moves.update);
 app.get('/moves/error', moves.errormessage);
-
-app.get('/startgame', game.startgame);
 // route middleware to make sure
 function isLoggedIn(req, res, next) {
     // if user is authenticated in the session, carry on
